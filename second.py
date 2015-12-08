@@ -11,9 +11,10 @@ from sklearn.linear_model import LogisticRegression
 from pprint import pprint
 from sklearn import tree
 from sklearn.externals.six import StringIO
-import pydot
-from IPython.display import Image
 from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.cross_validation import cross_val_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn import svm
 # A combination of Word lemmatization + LinearSVC model finally pushes the accuracy score past 80%
 
 traindf = pd.read_json("train.json")
@@ -29,16 +30,30 @@ vectorizertr = TfidfVectorizer(stop_words='english',
 
 predictor_tr = vectorizertr.fit_transform(corpustr).todense()
 
+# best for now : C = 0.46, penalty = "l2"  = 0.788580447312
+
+
 targets_tr = traindf['cuisine']
 
-clf = ExtraTreesClassifier(n_estimators=1000, max_depth=None,
-   min_samples_split=1, random_state=0, verbose= 2)
-clf = clf.fit(predictor_tr, targets_tr)
+#clf = ExtraTreesClassifier(n_estimators=100, max_depth=None min_samples_split=1, random_state=0, verbose= 2,n_jobs = -1)
+penalty = ["l1"]#, "l2"]
 
+for j in penalty:
+    for i in range(1,100):
+        p = i*0.1
+        print p
+        clf = LinearSVC(C=p, penalty=j, dual=False)
+#clf = GaussianNB()
+#clf = svm.SVC(verbose= 2)
+        clf = clf.fit(predictor_tr, targets_tr)
+        scores = cross_val_score(clf, predictor_tr, targets_tr)
+        print scores.mean()
+'''
 corpusts = testdf['ingredients_string']
-tfidfts=vectorizertr.transform(corpusts)
+tfidfts=vectorizertr.transform(corpusts).todense()
 
 prediction = clf.predict(tfidfts)
 testdf['cuisine']= prediction
 testdf = testdf.sort('id' , ascending=True)
 testdf[['id', 'cuisine' ]].to_csv("submission.csv")
+'''
